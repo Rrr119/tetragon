@@ -789,3 +789,123 @@ spec:
 		},
 	}
 }).RegisterAtInit()
+
+var _ = policytest.NewBuilder("kprobe-sys-setns").WithLabels("kprobes").WithPolicyTemplate(`
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "sys-setns-test"
+spec:
+  kprobes:
+  - call: "sys_setns"
+    syscall: true
+    args:
+    - index: 0
+      type: "int"
+    - index: 1
+      type: "int"
+    returnArg:
+      index: 0
+      type: "int"
+    selectors:
+    - matchBinaries:
+      - operator: In
+        values:
+        - {{ testBinary "namespace-tester" }}
+`).AddScenario(func(c *policytest.Conf) *policytest.Scenario {
+	myBin := c.TestBinary("namespace-tester")
+	// namespace-tester unshares its mount namespace and then joins back the
+	// parent one via setns(fd, 0), which must report the nstype field (0) and
+	// a successful return value.
+	setnsChecker := ec.NewProcessKprobeChecker("setns-checker").
+		WithFunctionName(sm.Suffix("sys_setns")).
+		WithProcess(ec.NewProcessChecker().
+			WithBinary(sm.Full(myBin))).
+		WithArgs(ec.NewKprobeArgumentListMatcher().
+			WithValues(
+				ec.NewKprobeArgumentChecker().WithIntArg(0),
+			)).
+		WithReturn(ec.NewKprobeArgumentChecker().WithIntArg(0))
+
+	return &policytest.Scenario{
+		Name:         "setns event reports nstype argument and return value",
+		Trigger:      policytest.NewCmdTrigger(myBin).ExpectExitCode(0),
+		EventChecker: ec.NewUnorderedEventChecker(setnsChecker),
+	}
+}).RegisterAtInit()
+
+var _ = policytest.NewBuilder("kprobe-sys-setns-nstype").WithLabels("kprobes").WithPolicyTemplate(`
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "sys-setns-nstype-test"
+spec:
+  kprobes:
+  - call: "sys_setns"
+    syscall: true
+    args:
+    - index: 0
+      type: "int"
+    - index: 1
+      type: "int"
+    selectors:
+    - matchBinaries:
+      - operator: In
+        values:
+        - {{ testBinary "namespace-tester" }}
+      matchArgs:
+      - index: 1
+        operator: "Equal"
+        values:
+        - "0"
+`).AddScenario(func(c *policytest.Conf) *policytest.Scenario {
+	myBin := c.TestBinary("namespace-tester")
+	setnsChecker := ec.NewProcessKprobeChecker("setns-nstype-checker").
+		WithFunctionName(sm.Suffix("sys_setns")).
+		WithProcess(ec.NewProcessChecker().
+			WithBinary(sm.Full(myBin))).
+		WithArgs(ec.NewKprobeArgumentListMatcher().
+			WithValues(
+				ec.NewKprobeArgumentChecker().WithIntArg(0),
+			))
+
+	return &policytest.Scenario{
+		Name:         "setns event matches the nstype argument selector",
+		Trigger:      policytest.NewCmdTrigger(myBin).ExpectExitCode(0),
+		EventChecker: ec.NewUnorderedEventChecker(setnsChecker),
+	}
+}).RegisterAtInit()
+
+var _ = policytest.NewBuilder("kprobe-sys-setns-binary-scope").WithLabels("kprobes").WithPolicyTemplate(`
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "sys-setns-binary-scope-test"
+spec:
+  kprobes:
+  - call: "sys_setns"
+    syscall: true
+    args:
+    - index: 0
+      type: "int"
+    - index: 1
+      type: "int"
+    selectors:
+    - matchBinaries:
+      - operator: In
+        values:
+        - {{ testBinary "nop" }}
+`).AddScenario(func(c *policytest.Conf) *policytest.Scenario {
+	myBin := c.TestBinary("namespace-tester")
+	setnsChecker := ec.NewProcessKprobeChecker("setns-binary-scope-checker").
+		WithFunctionName(sm.Suffix("sys_setns")).
+		WithProcess(ec.NewProcessChecker().
+			WithBinary(sm.Full(myBin)))
+
+	return &policytest.Scenario{
+		Name:                 "no setns event for binaries outside matchBinaries",
+		Trigger:              policytest.NewCmdTrigger(myBin).ExpectExitCode(0),
+		EventChecker:         ec.NewUnorderedEventChecker(setnsChecker),
+		ExpectCheckerFailure: true,
+	}
+}).RegisterAtInit()

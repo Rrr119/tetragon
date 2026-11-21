@@ -1,0 +1,21 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "syscalls"
+spec:
+  kprobes:
+  # int setns(int fd, int nstype);
+  # Detects processes (e.g. containers) moving into a different namespace.
+  - call: "sys_setns"
+    syscall: true
+    args:
+    # fd: file descriptor referring to the target namespace
+    - index: 0
+      type: "int"
+    # nstype: one of CLONE_NEW* (0 allows any namespace type)
+    - index: 1
+      type: "int"
+    # return value: 0 on success, -1 on failure
+    returnArg:
+      index: 0
+      type: "int"

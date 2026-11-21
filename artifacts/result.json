@@ -1,0 +1,18 @@
+{
+  "uid": "30819",
+  "harness": "Codex CLI",
+  "snapshotUrl": "https://github.com/Rrr119/tetragon/commit/acb13ca4b26db3748c858f6e605ff8693afc5386",
+  "harnessVersion": "codex-cli 0.167.2",
+  "operatingSystem": "Ubuntu 26.04.1 LTS",
+  "operatingSystemCell": [
+    "MacOS/Linux"
+  ],
+  "outputDirectory": "/home/dev/feedback/uid30819",
+  "wslDistro": "Ubuntu-26.04",
+  "B": {
+    "success": false,
+    "side": "B",
+    "error": "当前执行失败：[codex_relay_monitor] received signal 1, cleaned up  [codex_relay_monitor] received signal 15, cleaned up",
+    "attempts": 6
+  }
+}
