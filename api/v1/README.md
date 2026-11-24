@@ -62,6 +62,7 @@
     - [ProcessCredentials](#tetragon-ProcessCredentials)
     - [ProcessExec](#tetragon-ProcessExec)
     - [ProcessExit](#tetragon-ProcessExit)
+    - [ProcessFileIntegrity](#tetragon-ProcessFileIntegrity)
     - [ProcessKprobe](#tetragon-ProcessKprobe)
     - [ProcessLoader](#tetragon-ProcessLoader)
     - [ProcessLsm](#tetragon-ProcessLsm)
@@ -1242,6 +1243,33 @@ Environment variable
 
 
 
+<a name="tetragon-ProcessFileIntegrity"></a>
+
+### ProcessFileIntegrity
+ProcessFileIntegrity is generated when a file that matches a
+TracingPolicy fileIntegrity section is modified.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| process | [Process](#tetragon-Process) |  | Process that performed the modification. |
+| parent | [Process](#tetragon-Process) |  | Immediate parent of the process. |
+| ancestors | [Process](#tetragon-Process) | repeated | Ancestors of the process beyond the immediate parent. |
+| path | [string](#string) |  | Path of the file that was modified. |
+| old_path | [string](#string) |  | Previous path of the file. This is only set for rename operations. |
+| operation | [string](#string) |  | Operation that modified the file: write, truncate, rename or delete. |
+| digest | [string](#string) |  | SHA-256 digest of the file when the event was processed. This is best effort and may be empty when the file cannot be read by the agent. |
+| policy_name | [string](#string) |  | Name of the policy that detected the modification. |
+| message | [string](#string) |  | Short message of the Tracing Policy. |
+| tags | [string](#string) | repeated | Tags of the Tracing Policy. |
+| function_name | [string](#string) |  | Kernel hook that detected the modification. |
+| action | [KprobeAction](#tetragon-KprobeAction) |  | Action performed by the hook. |
+
+
+
+
+
+
 <a name="tetragon-ProcessKprobe"></a>
 
 ### ProcessKprobe
@@ -1728,6 +1756,7 @@ Capability set to filter over. NOTE: you may specify only ONE set here.
 | process_throttle | [ProcessThrottle](#tetragon-ProcessThrottle) |  |  |
 | process_lsm | [ProcessLsm](#tetragon-ProcessLsm) |  |  |
 | process_usdt | [ProcessUsdt](#tetragon-ProcessUsdt) |  |  |
+| process_file_integrity | [ProcessFileIntegrity](#tetragon-ProcessFileIntegrity) |  |  |
 | test | [Test](#tetragon-Test) |  |  |
 | rate_limit_info | [RateLimitInfo](#tetragon-RateLimitInfo) |  |  |
 | node_name | [string](#string) |  | Name of the node where this event was observed. |
@@ -1827,6 +1856,7 @@ GetEventsResponse event oneof.
 | PROCESS_THROTTLE | 27 |  |
 | PROCESS_LSM | 28 |  |
 | PROCESS_USDT | 29 |  |
+| PROCESS_FILE_INTEGRITY | 30 |  |
 | TEST | 40000 |  |
 | RATE_LIMIT_INFO | 40001 |  |
 

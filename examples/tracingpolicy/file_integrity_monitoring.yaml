@@ -1,0 +1,29 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "file-integrity-monitoring"
+spec:
+  fileIntegrity:
+  - paths:
+    - "/etc/passwd"
+    - "/etc/shadow"
+    - "/etc/ssh/"
+    - "/root/.ssh/"
+    - "/etc/kubernetes/"
+    excludePaths:
+    - "/etc/kubernetes/tmp/"
+    operations:
+    - "write"
+    - "truncate"
+    - "rename"
+    - "delete"
+    selectors:
+    - matchBinaries:
+      - operator: "NotIn"
+        values:
+        - "/usr/bin/dpkg"
+        - "/usr/bin/rpm"
+    message: "critical file was modified"
+    tags:
+    - "fim"
+    - "critical"

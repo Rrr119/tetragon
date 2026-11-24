@@ -576,6 +576,18 @@ func (p *CompactEncoder) EventToString(response *tetragon.GetEventsResponse) (st
 		processInfo, caps := p.Colorer.ProcessInfo(response.NodeName, uprobe.Process)
 		event := p.Colorer.Blue.Sprintf("🕵️ %-7s", "uprobe")
 		return CapTrailorPrinter(fmt.Sprintf("%s %s %s %s", event, processInfo, maybeQuote(uprobe.Path), maybeQuote(uprobe.Symbol)), caps), nil
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		fim := response.GetProcessFileIntegrity()
+		if fim.Process == nil {
+			return "", ErrMissingProcessInfo
+		}
+		processInfo, caps := p.Colorer.ProcessInfo(response.NodeName, fim.Process)
+		event := p.Colorer.Blue.Sprintf("🧾 %-7s", "file")
+		attr := maybeQuote(fim.Path)
+		if fim.Operation != "" {
+			attr = fmt.Sprintf("%s %s", fim.Operation, attr)
+		}
+		return CapTrailorPrinter(fmt.Sprintf("%s %s %s", event, processInfo, attr), caps), nil
 	case *tetragon.GetEventsResponse_ProcessLsm:
 		lsm := response.GetProcessLsm()
 		if lsm.Process == nil {

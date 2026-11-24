@@ -140,17 +140,18 @@ func (conf *EventCheckerConf) WriteYamlFile(file string) error {
 }
 
 type eventCheckerHelper struct {
-	ProcessExec       *eventchecker.ProcessExecChecker       `json:"exec,omitempty"`
-	ProcessExit       *eventchecker.ProcessExitChecker       `json:"exit,omitempty"`
-	ProcessKprobe     *eventchecker.ProcessKprobeChecker     `json:"kprobe,omitempty"`
-	ProcessTracepoint *eventchecker.ProcessTracepointChecker `json:"tracepoint,omitempty"`
-	ProcessUprobe     *eventchecker.ProcessUprobeChecker     `json:"uprobe,omitempty"`
-	ProcessUsdt       *eventchecker.ProcessUsdtChecker       `json:"usdt,omitempty"`
-	ProcessLsm        *eventchecker.ProcessLsmChecker        `json:"lsm,omitempty"`
-	Test              *eventchecker.TestChecker              `json:"test,omitempty"`
-	ProcessLoader     *eventchecker.ProcessLoaderChecker     `json:"loader,omitempty"`
-	RateLimitInfo     *eventchecker.RateLimitInfoChecker     `json:"rateLimitInfo,omitempty"`
-	ProcessThrottle   *eventchecker.ProcessThrottleChecker   `json:"throttle,omitempty"`
+	ProcessExec          *eventchecker.ProcessExecChecker          `json:"exec,omitempty"`
+	ProcessExit          *eventchecker.ProcessExitChecker          `json:"exit,omitempty"`
+	ProcessKprobe        *eventchecker.ProcessKprobeChecker        `json:"kprobe,omitempty"`
+	ProcessTracepoint    *eventchecker.ProcessTracepointChecker    `json:"tracepoint,omitempty"`
+	ProcessUprobe        *eventchecker.ProcessUprobeChecker        `json:"uprobe,omitempty"`
+	ProcessUsdt          *eventchecker.ProcessUsdtChecker          `json:"usdt,omitempty"`
+	ProcessLsm           *eventchecker.ProcessLsmChecker           `json:"lsm,omitempty"`
+	ProcessFileIntegrity *eventchecker.ProcessFileIntegrityChecker `json:"fileIntegrity,omitempty"`
+	Test                 *eventchecker.TestChecker                 `json:"test,omitempty"`
+	ProcessLoader        *eventchecker.ProcessLoaderChecker        `json:"loader,omitempty"`
+	RateLimitInfo        *eventchecker.RateLimitInfoChecker        `json:"rateLimitInfo,omitempty"`
+	ProcessThrottle      *eventchecker.ProcessThrottleChecker      `json:"throttle,omitempty"`
 }
 
 // EventChecker is a wrapper around the EventChecker interface to help unmarshaling
@@ -207,6 +208,12 @@ func (checker *EventChecker) UnmarshalJSON(b []byte) error {
 		}
 		eventChecker = helper.ProcessLsm
 	}
+	if helper.ProcessFileIntegrity != nil {
+		if eventChecker != nil {
+			return fmt.Errorf("EventChecker: cannot define more than one checker, got %T but already had %T", helper.ProcessFileIntegrity, eventChecker)
+		}
+		eventChecker = helper.ProcessFileIntegrity
+	}
 	if helper.Test != nil {
 		if eventChecker != nil {
 			return fmt.Errorf("EventChecker: cannot define more than one checker, got %T but already had %T", helper.Test, eventChecker)
@@ -253,6 +260,8 @@ func (checker EventChecker) MarshalJSON() ([]byte, error) {
 		helper.ProcessUsdt = c
 	case *eventchecker.ProcessLsmChecker:
 		helper.ProcessLsm = c
+	case *eventchecker.ProcessFileIntegrityChecker:
+		helper.ProcessFileIntegrity = c
 	case *eventchecker.TestChecker:
 		helper.Test = c
 	case *eventchecker.ProcessLoaderChecker:

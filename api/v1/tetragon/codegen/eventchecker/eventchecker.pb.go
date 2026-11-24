@@ -279,6 +279,8 @@ func CheckerFromEvent(event Event) (EventChecker, error) {
 		return NewProcessUsdtChecker("").FromProcessUsdt(ev), nil
 	case *tetragon.ProcessLsm:
 		return NewProcessLsmChecker("").FromProcessLsm(ev), nil
+	case *tetragon.ProcessFileIntegrity:
+		return NewProcessFileIntegrityChecker("").FromProcessFileIntegrity(ev), nil
 	case *tetragon.Test:
 		return NewTestChecker("").FromTest(ev), nil
 	case *tetragon.ProcessLoader:
@@ -345,6 +347,8 @@ func EventFromResponse(response *tetragon.GetEventsResponse) (Event, error) {
 		return ev.ProcessUsdt, nil
 	case *tetragon.GetEventsResponse_ProcessLsm:
 		return ev.ProcessLsm, nil
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return ev.ProcessFileIntegrity, nil
 	case *tetragon.GetEventsResponse_Test:
 		return ev.Test, nil
 	case *tetragon.GetEventsResponse_ProcessLoader:
@@ -2498,6 +2502,261 @@ func (checker *ProcessLsmChecker) FromProcessLsm(event *tetragon.ProcessLsm) *Pr
 	return checker
 }
 
+// ProcessFileIntegrityChecker implements a checker struct to check a ProcessFileIntegrity event
+type ProcessFileIntegrityChecker struct {
+	CheckerName  string                       `json:"checkerName"`
+	Process      *ProcessChecker              `json:"process,omitempty"`
+	Parent       *ProcessChecker              `json:"parent,omitempty"`
+	Ancestors    *ProcessListMatcher          `json:"ancestors,omitempty"`
+	Path         *stringmatcher.StringMatcher `json:"path,omitempty"`
+	OldPath      *stringmatcher.StringMatcher `json:"oldPath,omitempty"`
+	Operation    *stringmatcher.StringMatcher `json:"operation,omitempty"`
+	Digest       *stringmatcher.StringMatcher `json:"digest,omitempty"`
+	PolicyName   *stringmatcher.StringMatcher `json:"policyName,omitempty"`
+	Message      *stringmatcher.StringMatcher `json:"message,omitempty"`
+	Tags         *StringListMatcher           `json:"tags,omitempty"`
+	FunctionName *stringmatcher.StringMatcher `json:"functionName,omitempty"`
+	Action       *KprobeActionChecker         `json:"action,omitempty"`
+}
+
+// CheckEvent checks a single event and implements the EventChecker interface
+func (checker *ProcessFileIntegrityChecker) CheckEvent(event Event) error {
+	if ev, ok := event.(*tetragon.ProcessFileIntegrity); ok {
+		return checker.Check(ev)
+	}
+	return fmt.Errorf("%s: %T is not a ProcessFileIntegrity event", CheckerLogPrefix(checker), event)
+}
+
+// CheckResponse checks a single gRPC response and implements the EventChecker interface
+func (checker *ProcessFileIntegrityChecker) CheckResponse(response *tetragon.GetEventsResponse) error {
+	event, err := EventFromResponse(response)
+	if err != nil {
+		return err
+	}
+	return checker.CheckEvent(event)
+}
+
+// NewProcessFileIntegrityChecker creates a new ProcessFileIntegrityChecker
+func NewProcessFileIntegrityChecker(name string) *ProcessFileIntegrityChecker {
+	return &ProcessFileIntegrityChecker{CheckerName: name}
+}
+
+// Get the name associated with the checker
+func (checker *ProcessFileIntegrityChecker) GetCheckerName() string {
+	return checker.CheckerName
+}
+
+// Get the type of the checker as a string
+func (checker *ProcessFileIntegrityChecker) GetCheckerType() string {
+	return "ProcessFileIntegrityChecker"
+}
+
+// Check checks a ProcessFileIntegrity event
+func (checker *ProcessFileIntegrityChecker) Check(event *tetragon.ProcessFileIntegrity) error {
+	if event == nil {
+		return fmt.Errorf("%s: ProcessFileIntegrity event is nil", CheckerLogPrefix(checker))
+	}
+
+	fieldChecks := func() error {
+		if checker.Process != nil {
+			if err := checker.Process.Check(event.Process); err != nil {
+				return fmt.Errorf("Process check failed: %w", err)
+			}
+		}
+		if checker.Parent != nil {
+			if err := checker.Parent.Check(event.Parent); err != nil {
+				return fmt.Errorf("Parent check failed: %w", err)
+			}
+		}
+		if checker.Ancestors != nil {
+			if err := checker.Ancestors.Check(event.Ancestors); err != nil {
+				return fmt.Errorf("Ancestors check failed: %w", err)
+			}
+		}
+		if checker.Path != nil {
+			if err := checker.Path.Match(event.Path); err != nil {
+				return fmt.Errorf("Path check failed: %w", err)
+			}
+		}
+		if checker.OldPath != nil {
+			if err := checker.OldPath.Match(event.OldPath); err != nil {
+				return fmt.Errorf("OldPath check failed: %w", err)
+			}
+		}
+		if checker.Operation != nil {
+			if err := checker.Operation.Match(event.Operation); err != nil {
+				return fmt.Errorf("Operation check failed: %w", err)
+			}
+		}
+		if checker.Digest != nil {
+			if err := checker.Digest.Match(event.Digest); err != nil {
+				return fmt.Errorf("Digest check failed: %w", err)
+			}
+		}
+		if checker.PolicyName != nil {
+			if err := checker.PolicyName.Match(event.PolicyName); err != nil {
+				return fmt.Errorf("PolicyName check failed: %w", err)
+			}
+		}
+		if checker.Message != nil {
+			if err := checker.Message.Match(event.Message); err != nil {
+				return fmt.Errorf("Message check failed: %w", err)
+			}
+		}
+		if checker.Tags != nil {
+			if err := checker.Tags.Check(event.Tags); err != nil {
+				return fmt.Errorf("Tags check failed: %w", err)
+			}
+		}
+		if checker.FunctionName != nil {
+			if err := checker.FunctionName.Match(event.FunctionName); err != nil {
+				return fmt.Errorf("FunctionName check failed: %w", err)
+			}
+		}
+		if checker.Action != nil {
+			if err := checker.Action.Check(&event.Action); err != nil {
+				return fmt.Errorf("Action check failed: %w", err)
+			}
+		}
+		return nil
+	}
+	if err := fieldChecks(); err != nil {
+		return fmt.Errorf("%s: %w", CheckerLogPrefix(checker), err)
+	}
+	return nil
+}
+
+// WithProcess adds a Process check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithProcess(check *ProcessChecker) *ProcessFileIntegrityChecker {
+	checker.Process = check
+	return checker
+}
+
+// UnsetProcess unsets the Process check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) UnsetProcess() *ProcessFileIntegrityChecker {
+	checker.Process = nil
+	return checker
+}
+
+// WithParent adds a Parent check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithParent(check *ProcessChecker) *ProcessFileIntegrityChecker {
+	checker.Parent = check
+	return checker
+}
+
+// UnsetParent unsets the Parent check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) UnsetParent() *ProcessFileIntegrityChecker {
+	checker.Parent = nil
+	return checker
+}
+
+// WithAncestors adds a Ancestors check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithAncestors(check *ProcessListMatcher) *ProcessFileIntegrityChecker {
+	checker.Ancestors = check
+	return checker
+}
+
+// WithPath adds a Path check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithPath(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.Path = check
+	return checker
+}
+
+// WithOldPath adds a OldPath check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithOldPath(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.OldPath = check
+	return checker
+}
+
+// WithOperation adds a Operation check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithOperation(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.Operation = check
+	return checker
+}
+
+// WithDigest adds a Digest check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithDigest(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.Digest = check
+	return checker
+}
+
+// WithPolicyName adds a PolicyName check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithPolicyName(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.PolicyName = check
+	return checker
+}
+
+// WithMessage adds a Message check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithMessage(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.Message = check
+	return checker
+}
+
+// WithTags adds a Tags check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithTags(check *StringListMatcher) *ProcessFileIntegrityChecker {
+	checker.Tags = check
+	return checker
+}
+
+// WithFunctionName adds a FunctionName check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithFunctionName(check *stringmatcher.StringMatcher) *ProcessFileIntegrityChecker {
+	checker.FunctionName = check
+	return checker
+}
+
+// WithAction adds a Action check to the ProcessFileIntegrityChecker
+func (checker *ProcessFileIntegrityChecker) WithAction(check tetragon.KprobeAction) *ProcessFileIntegrityChecker {
+	wrappedCheck := KprobeActionChecker(check)
+	checker.Action = &wrappedCheck
+	return checker
+}
+
+//FromProcessFileIntegrity populates the ProcessFileIntegrityChecker using data from a ProcessFileIntegrity event
+func (checker *ProcessFileIntegrityChecker) FromProcessFileIntegrity(event *tetragon.ProcessFileIntegrity) *ProcessFileIntegrityChecker {
+	if event == nil {
+		return checker
+	}
+	if event.Process != nil {
+		checker.Process = NewProcessChecker().FromProcess(event.Process)
+	}
+	if event.Parent != nil {
+		checker.Parent = NewProcessChecker().FromProcess(event.Parent)
+	}
+	{
+		var checks []*ProcessChecker
+		for _, check := range event.Ancestors {
+			var convertedCheck *ProcessChecker
+			if check != nil {
+				convertedCheck = NewProcessChecker().FromProcess(check)
+			}
+			checks = append(checks, convertedCheck)
+		}
+		lm := NewProcessListMatcher().WithOperator(listmatcher.Ordered).
+			WithValues(checks...)
+		checker.Ancestors = lm
+	}
+	checker.Path = stringmatcher.Full(event.Path)
+	checker.OldPath = stringmatcher.Full(event.OldPath)
+	checker.Operation = stringmatcher.Full(event.Operation)
+	checker.Digest = stringmatcher.Full(event.Digest)
+	checker.PolicyName = stringmatcher.Full(event.PolicyName)
+	checker.Message = stringmatcher.Full(event.Message)
+	{
+		var checks []*stringmatcher.StringMatcher
+		for _, check := range event.Tags {
+			var convertedCheck *stringmatcher.StringMatcher
+			convertedCheck = stringmatcher.Full(check)
+			checks = append(checks, convertedCheck)
+		}
+		lm := NewStringListMatcher().WithOperator(listmatcher.Ordered).
+			WithValues(checks...)
+		checker.Tags = lm
+	}
+	checker.FunctionName = stringmatcher.Full(event.FunctionName)
+	checker.Action = NewKprobeActionChecker(event.Action)
+	return checker
+}
+
 // TestChecker implements a checker struct to check a Test event
 type TestChecker struct {
 	CheckerName string  `json:"checkerName"`
@@ -2961,6 +3220,8 @@ func UnsetProcessChecks(checker MultiEventChecker) {
 			v.UnsetProcess()
 		case *ProcessLsmChecker:
 			v.UnsetProcess()
+		case *ProcessFileIntegrityChecker:
+			v.UnsetProcess()
 		case *ProcessLoaderChecker:
 			v.UnsetProcess()
 
@@ -2991,6 +3252,8 @@ func UnsetParentChecks(checker MultiEventChecker) {
 		case *ProcessUsdtChecker:
 			v.UnsetParent()
 		case *ProcessLsmChecker:
+			v.UnsetParent()
+		case *ProcessFileIntegrityChecker:
 			v.UnsetParent()
 		case *ProcessLoaderChecker:
 			v.UnsetParent()

@@ -1665,6 +1665,1211 @@
           "maxItems": 128,
           "type": "array"
         },
+        "fileIntegrity": {
+          "description": "A list of file integrity specs.\n\nFile integrity specs are implemented on top of the existing kprobe\nsensor. They can be combined with kprobes in the same policy.",
+          "items": {
+            "description": "FileIntegritySpec configures file integrity monitoring for a set of paths.\n\nPaths support three matching modes:\n  - an exact path, for example \"/etc/passwd\";\n  - a directory subtree when the path ends with \"/\" or \"/**\", or when the\n    path names an existing directory, for example \"/etc/\";\n  - a shell-style glob, for example \"/etc/*.conf\".",
+            "properties": {
+              "excludePaths": {
+                "description": "Paths to exclude from monitoring. Excludes take precedence over Paths.",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 128,
+                "type": "array"
+              },
+              "message": {
+                "description": "A short message included in file integrity events.",
+                "type": "string"
+              },
+              "operations": {
+                "description": "Operations to monitor. Defaults to all supported operations.",
+                "items": {
+                  "enum": [
+                    "write",
+                    "truncate",
+                    "rename",
+                    "delete"
+                  ],
+                  "type": "string"
+                },
+                "maxItems": 4,
+                "type": "array"
+              },
+              "paths": {
+                "description": "Paths to monitor.",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 128,
+                "minItems": 1,
+                "type": "array"
+              },
+              "selectors": {
+                "description": "Selectors to filter events by process context. The path filter is\nappended to every selector and selectors are ORed.",
+                "items": {
+                  "description": "KProbeSelector selects function calls for kprobe based on PIDs and function arguments. The\nresults of MatchPIDs and MatchArgs are ANDed.",
+                  "properties": {
+                    "label": {
+                      "description": "Human-readable selector label used in status and metrics.",
+                      "type": "string"
+                    },
+                    "macros": {
+                      "description": "A list of macros names, defined in spec.selectorsMacros.\nFilters specified in macros will be appended to corresponding filters of the selector.",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "matchActions": {
+                      "description": "A list of actions to execute when this selector matches",
+                      "items": {
+                        "properties": {
+                          "action": {
+                            "description": "Action to execute.\nThe Override action has three variants, depending on what arguments are set\n  1. Override the return value of function\n       Supported hooks: kprobes, uprobes, lsm\n       Arguments: ArgError (return value)\n  2. Override the value of a register\n       Supported hooks: uprobes\n       Arguments: ArgRegs\n  3. Override a function call\n       Supported hooks: uprobes\n       Arguments: One of:\n       - ArgNewSymbol: override call to a new symbol (in the binary)\n\t      - ArgNewAddr: override call to a new address (in the binary)\n\t      - ArgNewOffset: override call to an offset (in the binary)",
+                            "enum": [
+                              "Post",
+                              "Sigkill",
+                              "Override",
+                              "GetUrl",
+                              "DnsLookup",
+                              "NoPost",
+                              "Signal",
+                              "TrackSock",
+                              "UntrackSock",
+                              "NotifyEnforcer",
+                              "CleanupEnforcerNotification",
+                              "Set",
+                              "UpdateState"
+                            ],
+                            "type": "string"
+                          },
+                          "argError": {
+                            "description": "error value for override action",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argFqdn": {
+                            "description": "A FQDN to lookup for the dnsLookup action",
+                            "type": "string"
+                          },
+                          "argIndex": {
+                            "description": "An arg index for the set action",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argNewAddr": {
+                            "description": "An arg value for the override action, uprobe only.\nThe new symbol's address.\nBeware that the symbol MUST be binary compatible with the traced uprobe symbol.",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "argNewOffset": {
+                            "description": "An arg value for the override action, uprobe only.\nThe new symbol's offset.\nBeware that the symbol MUST be binary compatible with the traced uprobe symbol.",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "argNewSymbol": {
+                            "description": "An arg value for the override action, uprobe only.\nThe new symbol name.\nBeware that the symbol MUST be binary compatible with the traced uprobe symbol.",
+                            "type": "string"
+                          },
+                          "argRegs": {
+                            "description": "An arg value for the override action, uprobe only.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "argSig": {
+                            "description": "A signal number for signal action",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argSock": {
+                            "description": "An arg index for the sock for trackSock and untrackSock actions",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argUrl": {
+                            "description": "A URL for the getUrl action",
+                            "type": "string"
+                          },
+                          "argValue": {
+                            "description": "An arg value for the set action",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "imaHash": {
+                            "description": "Enable collection of file hashes from integrity subsystem.\nOnly valid with the post action.",
+                            "type": "boolean"
+                          },
+                          "kernelStackTrace": {
+                            "description": "Enable kernel stack trace export. Only valid with the post action.",
+                            "type": "boolean"
+                          },
+                          "rateLimit": {
+                            "description": "A time period within which repeated messages will not be posted. Can be\nspecified in seconds (default or with 's' suffix), minutes ('m' suffix)\nor hours ('h' suffix). Only valid with the post action.",
+                            "type": "string"
+                          },
+                          "rateLimitScope": {
+                            "description": "The scope of the provided rate limit argument. Can be \"thread\" (default),\n\"process\" (all threads for the same process), or \"global\". If \"thread\" is\nselected then rate limiting applies per thread; if \"process\" is selected\nthen rate limiting applies per process; if \"global\" is selected then rate\nlimiting applies regardless of which process or thread caused the action.\nOnly valid with the post action and with a rateLimit specified.",
+                            "type": "string"
+                          },
+                          "sopath": {
+                            "description": "For ArgNewSymbol, ArgNewAddr and ArgNewOffset, indicates to load\nthe new symbol from a shared object located at sopath.\nFull `sopath` cannot exceed 127 characters.\nIts basename (ie: the library name) cannot exceed 31 characters.",
+                            "type": "string"
+                          },
+                          "state": {
+                            "description": "State operation to perform. Only valid with the UpdateState action.",
+                            "properties": {
+                              "name": {
+                                "description": "The state object to update. Must reference a previously defined state object.",
+                                "type": "string"
+                              },
+                              "operator": {
+                                "description": "Operation to perform on the state.",
+                                "enum": [
+                                  "Set",
+                                  "Delete"
+                                ],
+                                "type": "string"
+                              },
+                              "value": {
+                                "description": "Unsigned 64-bit integer to assign. Only valid with the Set operator.",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "operator"
+                            ],
+                            "type": "object",
+                            "x-kubernetes-validations": [
+                              {
+                                "message": "Set requires a value and Delete does not accept a value",
+                                "rule": "has(self.operator) && (self.operator == 'Set' ? has(self.value) : !has(self.value))"
+                              }
+                            ],
+                            "additionalProperties": false
+                          },
+                          "userStackTrace": {
+                            "description": "Enable user stack trace export. Only valid with the post action.",
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "action"
+                        ],
+                        "type": "object",
+                        "x-kubernetes-validations": [
+                          {
+                            "message": "override action needs at most one of argNewSymbol, argNewAddr or argNewOffset defined",
+                            "rule": "!(has(self.argNewSymbol) && has(self.argNewAddr)) && !(has(self.argNewSymbol) && has(self.argNewOffset)) && !(has(self.argNewAddr) && has(self.argNewOffset))"
+                          },
+                          {
+                            "message": "state is required for UpdateState and only valid with that action",
+                            "rule": "self.action == 'UpdateState' ? has(self.state) : !has(self.state)"
+                          }
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 3,
+                      "type": "array"
+                    },
+                    "matchArgs": {
+                      "description": "A list of argument filters. MatchArgs are ANDed.",
+                      "items": {
+                        "properties": {
+                          "args": {
+                            "description": "Position of the operator arguments (in spec file) to apply the filter to.",
+                            "items": {
+                              "format": "int32",
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "type": "array"
+                          },
+                          "index": {
+                            "description": "Position of the argument (in function prototype) to apply the filter to.",
+                            "format": "int32",
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "operator": {
+                            "description": "Filter operation.\n\nNote: The CelExpr operator is deprecated and will be removed in Tetragon OSS v1.9.0. Use the MatchCEL selector instead.",
+                            "enum": [
+                              "Equal",
+                              "NotEqual",
+                              "Prefix",
+                              "NotPrefix",
+                              "Postfix",
+                              "NotPostfix",
+                              "GreaterThan",
+                              "LessThan",
+                              "GT",
+                              "LT",
+                              "Mask",
+                              "SPort",
+                              "NotSPort",
+                              "SPortPriv",
+                              "NotSportPriv",
+                              "DPort",
+                              "NotDPort",
+                              "DPortPriv",
+                              "NotDPortPriv",
+                              "SAddr",
+                              "NotSAddr",
+                              "DAddr",
+                              "NotDAddr",
+                              "Protocol",
+                              "Family",
+                              "State",
+                              "InMap",
+                              "NotInMap",
+                              "CapabilitiesGained",
+                              "InRange",
+                              "NotInRange",
+                              "SubString",
+                              "SubStringIgnCase",
+                              "CelExpr",
+                              "FileType",
+                              "NotFileType"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Value to compare the argument against.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchBinaries": {
+                      "description": "A list of binary exec name filters.",
+                      "items": {
+                        "properties": {
+                          "followChildren": {
+                            "default": false,
+                            "description": "In addition to binaries, match children processes of specified binaries.",
+                            "type": "boolean"
+                          },
+                          "operator": {
+                            "description": "Filter operation.",
+                            "enum": [
+                              "In",
+                              "NotIn",
+                              "Prefix",
+                              "NotPrefix",
+                              "Postfix",
+                              "NotPostfix"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Value to compare the argument against.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "maxItems": 1,
+                      "type": "array"
+                    },
+                    "matchCEL": {
+                      "description": "Match CEL expression. The CEL expression may include:\n argX (e.g., arg0) where X is the index of the argument in the Args array.\n dataX where X is the index of the data in the Data array.",
+                      "properties": {
+                        "expr": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "expr"
+                      ],
+                      "type": "object",
+                      "additionalProperties": false
+                    },
+                    "matchCapabilities": {
+                      "description": "A list of capabilities and IDs",
+                      "items": {
+                        "properties": {
+                          "isNamespaceCapability": {
+                            "default": false,
+                            "description": "Indicates whether these caps are namespace caps.",
+                            "type": "boolean"
+                          },
+                          "operator": {
+                            "description": "Namespace selector operator.",
+                            "enum": [
+                              "In",
+                              "NotIn"
+                            ],
+                            "type": "string"
+                          },
+                          "type": {
+                            "default": "Effective",
+                            "description": "Type of capabilities",
+                            "enum": [
+                              "Effective",
+                              "Inheritable",
+                              "Permitted"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Capabilities to match.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchCapabilityChanges": {
+                      "description": "IDs for capabilities changes",
+                      "items": {
+                        "properties": {
+                          "isNamespaceCapability": {
+                            "default": false,
+                            "description": "Indicates whether these caps are namespace caps.",
+                            "type": "boolean"
+                          },
+                          "operator": {
+                            "description": "Namespace selector operator.",
+                            "enum": [
+                              "In",
+                              "NotIn"
+                            ],
+                            "type": "string"
+                          },
+                          "type": {
+                            "default": "Effective",
+                            "description": "Type of capabilities",
+                            "enum": [
+                              "Effective",
+                              "Inheritable",
+                              "Permitted"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Capabilities to match.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchCmdArgs": {
+                      "description": "A list of command-line argument filters. MatchCmdArgs are ANDed.\nIndexes are zero-based and exclude argv[0].",
+                      "items": {
+                        "properties": {
+                          "index": {
+                            "description": "Position of the command-line argument to apply the filter to. Indexes\nare zero-based and exclude argv[0], which is represented by the binary.",
+                            "format": "int32",
+                            "maximum": 31,
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "operator": {
+                            "description": "Filter operation.",
+                            "enum": [
+                              "Equal",
+                              "NotEqual",
+                              "Prefix",
+                              "NotPrefix",
+                              "Postfix",
+                              "NotPostfix"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Values to compare the command-line argument against.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "index",
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchData": {
+                      "description": "A list of argument filters. MatchData are ANDed.",
+                      "items": {
+                        "properties": {
+                          "args": {
+                            "description": "Position of the operator arguments (in spec file) to apply the filter to.",
+                            "items": {
+                              "format": "int32",
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "type": "array"
+                          },
+                          "index": {
+                            "description": "Position of the argument (in function prototype) to apply the filter to.",
+                            "format": "int32",
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "operator": {
+                            "description": "Filter operation.\n\nNote: The CelExpr operator is deprecated and will be removed in Tetragon OSS v1.9.0. Use the MatchCEL selector instead.",
+                            "enum": [
+                              "Equal",
+                              "NotEqual",
+                              "Prefix",
+                              "NotPrefix",
+                              "Postfix",
+                              "NotPostfix",
+                              "GreaterThan",
+                              "LessThan",
+                              "GT",
+                              "LT",
+                              "Mask",
+                              "SPort",
+                              "NotSPort",
+                              "SPortPriv",
+                              "NotSportPriv",
+                              "DPort",
+                              "NotDPort",
+                              "DPortPriv",
+                              "NotDPortPriv",
+                              "SAddr",
+                              "NotSAddr",
+                              "DAddr",
+                              "NotDAddr",
+                              "Protocol",
+                              "Family",
+                              "State",
+                              "InMap",
+                              "NotInMap",
+                              "CapabilitiesGained",
+                              "InRange",
+                              "NotInRange",
+                              "SubString",
+                              "SubStringIgnCase",
+                              "CelExpr",
+                              "FileType",
+                              "NotFileType"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Value to compare the argument against.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchNamespaceChanges": {
+                      "description": "IDs for namespace changes",
+                      "items": {
+                        "properties": {
+                          "operator": {
+                            "description": "Namespace selector operator.",
+                            "enum": [
+                              "In",
+                              "NotIn"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Namespace types (e.g., Mnt, Pid) to match.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchNamespaces": {
+                      "description": "A list of namespaces and IDs",
+                      "items": {
+                        "properties": {
+                          "namespace": {
+                            "description": "Namespace selector name.",
+                            "enum": [
+                              "Uts",
+                              "Ipc",
+                              "Mnt",
+                              "Pid",
+                              "PidForChildren",
+                              "Net",
+                              "Time",
+                              "TimeForChildren",
+                              "Cgroup",
+                              "User"
+                            ],
+                            "type": "string"
+                          },
+                          "operator": {
+                            "description": "Namespace selector operator.",
+                            "enum": [
+                              "In",
+                              "NotIn"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Namespace IDs (or host_ns for host namespace) of namespaces to match.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "namespace",
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchPIDs": {
+                      "description": "A list of process ID filters. MatchPIDs are ANDed.",
+                      "items": {
+                        "properties": {
+                          "followForks": {
+                            "default": false,
+                            "description": "Matches any descendant processes of the matching PIDs.",
+                            "type": "boolean"
+                          },
+                          "isNamespacePID": {
+                            "default": false,
+                            "description": "Indicates whether PIDs are namespace PIDs.",
+                            "type": "boolean"
+                          },
+                          "operator": {
+                            "description": "PID selector operator.",
+                            "enum": [
+                              "In",
+                              "NotIn"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Process IDs to match. Only the first 4 are matched by the kernel.",
+                            "items": {
+                              "format": "int32",
+                              "type": "integer"
+                            },
+                            "maxItems": 4,
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchParentBinaries": {
+                      "description": "A list of process parent exec name filters.",
+                      "items": {
+                        "properties": {
+                          "followChildren": {
+                            "default": false,
+                            "description": "In addition to binaries, match children processes of specified binaries.",
+                            "type": "boolean"
+                          },
+                          "operator": {
+                            "description": "Filter operation.",
+                            "enum": [
+                              "In",
+                              "NotIn",
+                              "Prefix",
+                              "NotPrefix",
+                              "Postfix",
+                              "NotPostfix"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Value to compare the argument against.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator",
+                          "values"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "maxItems": 1,
+                      "type": "array"
+                    },
+                    "matchReturnActions": {
+                      "description": "A list of actions to execute when MatchReturnArgs selector matches",
+                      "items": {
+                        "properties": {
+                          "action": {
+                            "description": "Action to execute.\nThe Override action has three variants, depending on what arguments are set\n  1. Override the return value of function\n       Supported hooks: kprobes, uprobes, lsm\n       Arguments: ArgError (return value)\n  2. Override the value of a register\n       Supported hooks: uprobes\n       Arguments: ArgRegs\n  3. Override a function call\n       Supported hooks: uprobes\n       Arguments: One of:\n       - ArgNewSymbol: override call to a new symbol (in the binary)\n\t      - ArgNewAddr: override call to a new address (in the binary)\n\t      - ArgNewOffset: override call to an offset (in the binary)",
+                            "enum": [
+                              "Post",
+                              "Sigkill",
+                              "Override",
+                              "GetUrl",
+                              "DnsLookup",
+                              "NoPost",
+                              "Signal",
+                              "TrackSock",
+                              "UntrackSock",
+                              "NotifyEnforcer",
+                              "CleanupEnforcerNotification",
+                              "Set",
+                              "UpdateState"
+                            ],
+                            "type": "string"
+                          },
+                          "argError": {
+                            "description": "error value for override action",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argFqdn": {
+                            "description": "A FQDN to lookup for the dnsLookup action",
+                            "type": "string"
+                          },
+                          "argIndex": {
+                            "description": "An arg index for the set action",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argNewAddr": {
+                            "description": "An arg value for the override action, uprobe only.\nThe new symbol's address.\nBeware that the symbol MUST be binary compatible with the traced uprobe symbol.",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "argNewOffset": {
+                            "description": "An arg value for the override action, uprobe only.\nThe new symbol's offset.\nBeware that the symbol MUST be binary compatible with the traced uprobe symbol.",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "argNewSymbol": {
+                            "description": "An arg value for the override action, uprobe only.\nThe new symbol name.\nBeware that the symbol MUST be binary compatible with the traced uprobe symbol.",
+                            "type": "string"
+                          },
+                          "argRegs": {
+                            "description": "An arg value for the override action, uprobe only.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "argSig": {
+                            "description": "A signal number for signal action",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argSock": {
+                            "description": "An arg index for the sock for trackSock and untrackSock actions",
+                            "format": "int32",
+                            "type": "integer"
+                          },
+                          "argUrl": {
+                            "description": "A URL for the getUrl action",
+                            "type": "string"
+                          },
+                          "argValue": {
+                            "description": "An arg value for the set action",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "imaHash": {
+                            "description": "Enable collection of file hashes from integrity subsystem.\nOnly valid with the post action.",
+                            "type": "boolean"
+                          },
+                          "kernelStackTrace": {
+                            "description": "Enable kernel stack trace export. Only valid with the post action.",
+                            "type": "boolean"
+                          },
+                          "rateLimit": {
+                            "description": "A time period within which repeated messages will not be posted. Can be\nspecified in seconds (default or with 's' suffix), minutes ('m' suffix)\nor hours ('h' suffix). Only valid with the post action.",
+                            "type": "string"
+                          },
+                          "rateLimitScope": {
+                            "description": "The scope of the provided rate limit argument. Can be \"thread\" (default),\n\"process\" (all threads for the same process), or \"global\". If \"thread\" is\nselected then rate limiting applies per thread; if \"process\" is selected\nthen rate limiting applies per process; if \"global\" is selected then rate\nlimiting applies regardless of which process or thread caused the action.\nOnly valid with the post action and with a rateLimit specified.",
+                            "type": "string"
+                          },
+                          "sopath": {
+                            "description": "For ArgNewSymbol, ArgNewAddr and ArgNewOffset, indicates to load\nthe new symbol from a shared object located at sopath.\nFull `sopath` cannot exceed 127 characters.\nIts basename (ie: the library name) cannot exceed 31 characters.",
+                            "type": "string"
+                          },
+                          "state": {
+                            "description": "State operation to perform. Only valid with the UpdateState action.",
+                            "properties": {
+                              "name": {
+                                "description": "The state object to update. Must reference a previously defined state object.",
+                                "type": "string"
+                              },
+                              "operator": {
+                                "description": "Operation to perform on the state.",
+                                "enum": [
+                                  "Set",
+                                  "Delete"
+                                ],
+                                "type": "string"
+                              },
+                              "value": {
+                                "description": "Unsigned 64-bit integer to assign. Only valid with the Set operator.",
+                                "pattern": "^[0-9]+$",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "operator"
+                            ],
+                            "type": "object",
+                            "x-kubernetes-validations": [
+                              {
+                                "message": "Set requires a value and Delete does not accept a value",
+                                "rule": "has(self.operator) && (self.operator == 'Set' ? has(self.value) : !has(self.value))"
+                              }
+                            ],
+                            "additionalProperties": false
+                          },
+                          "userStackTrace": {
+                            "description": "Enable user stack trace export. Only valid with the post action.",
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "action"
+                        ],
+                        "type": "object",
+                        "x-kubernetes-validations": [
+                          {
+                            "message": "override action needs at most one of argNewSymbol, argNewAddr or argNewOffset defined",
+                            "rule": "!(has(self.argNewSymbol) && has(self.argNewAddr)) && !(has(self.argNewSymbol) && has(self.argNewOffset)) && !(has(self.argNewAddr) && has(self.argNewOffset))"
+                          },
+                          {
+                            "message": "state is required for UpdateState and only valid with that action",
+                            "rule": "self.action == 'UpdateState' ? has(self.state) : !has(self.state)"
+                          }
+                        ],
+                        "additionalProperties": false
+                      },
+                      "maxItems": 3,
+                      "type": "array"
+                    },
+                    "matchReturnArgs": {
+                      "description": "A list of argument filters. MatchReturnArgs are ANDed.",
+                      "items": {
+                        "properties": {
+                          "args": {
+                            "description": "Position of the operator arguments (in spec file) to apply the filter to.",
+                            "items": {
+                              "format": "int32",
+                              "minimum": 0,
+                              "type": "integer"
+                            },
+                            "type": "array"
+                          },
+                          "index": {
+                            "description": "Position of the argument (in function prototype) to apply the filter to.",
+                            "format": "int32",
+                            "minimum": 0,
+                            "type": "integer"
+                          },
+                          "operator": {
+                            "description": "Filter operation.\n\nNote: The CelExpr operator is deprecated and will be removed in Tetragon OSS v1.9.0. Use the MatchCEL selector instead.",
+                            "enum": [
+                              "Equal",
+                              "NotEqual",
+                              "Prefix",
+                              "NotPrefix",
+                              "Postfix",
+                              "NotPostfix",
+                              "GreaterThan",
+                              "LessThan",
+                              "GT",
+                              "LT",
+                              "Mask",
+                              "SPort",
+                              "NotSPort",
+                              "SPortPriv",
+                              "NotSportPriv",
+                              "DPort",
+                              "NotDPort",
+                              "DPortPriv",
+                              "NotDPortPriv",
+                              "SAddr",
+                              "NotSAddr",
+                              "DAddr",
+                              "NotDAddr",
+                              "Protocol",
+                              "Family",
+                              "State",
+                              "InMap",
+                              "NotInMap",
+                              "CapabilitiesGained",
+                              "InRange",
+                              "NotInRange",
+                              "SubString",
+                              "SubStringIgnCase",
+                              "CelExpr",
+                              "FileType",
+                              "NotFileType"
+                            ],
+                            "type": "string"
+                          },
+                          "values": {
+                            "description": "Value to compare the argument against.",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "operator"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchStates": {
+                      "description": "State predicates to match. MatchStates are ANDed.",
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "description": "Name of the state object to match. Must reference a previously defined state object.",
+                            "type": "string"
+                          },
+                          "operator": {
+                            "enum": [
+                              "Equal",
+                              "NotEqual"
+                            ],
+                            "type": "string"
+                          },
+                          "value": {
+                            "description": "Value to compare against the state value.",
+                            "pattern": "^[0-9]+$",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "operator",
+                          "value"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "maxItems": 4,
+                      "type": "array"
+                    },
+                    "matchUserCallers": {
+                      "description": "A list of caller filters. MatchUserCallers are ANDed. Only supported for uprobes.",
+                      "items": {
+                        "properties": {
+                          "depth": {
+                            "description": "Depth is the distance from the probed function to the caller.\nDepth of 1 means the immediate caller, depth of 2 means the caller's caller, and so on.\nDepth of \"any\" means any of the last 15 callers in the stack.",
+                            "pattern": "^(any|[1-9][0-9]*)$",
+                            "type": "string"
+                          },
+                          "endRange": {
+                            "description": "StartRange and EndRange specify a range of caller address to match. Both should be specified together.\nSpecify either Symbol or StartRange and EndRange to match the caller function.",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "path": {
+                            "description": "Path to the binary of the caller function.\nIf not specified, the symbol will be looked up in the binary located at the path of the probe.\nThis is used if the caller function is in a different binary from the probed function, e.g.,\nwhen probing a function in a shared library.",
+                            "type": "string"
+                          },
+                          "startRange": {
+                            "description": "StartRange and EndRange specify a range of caller address to match. Both should be specified together.\nYou can get those values from the binary's symbol table.\nSpecify either Symbol or StartRange and EndRange to match the caller function.",
+                            "format": "int64",
+                            "type": "integer"
+                          },
+                          "symbol": {
+                            "description": "Symbol of the caller function in the binary specified by Path.\nIf Path is not specified, the symbol will be looked up in binary located at the path of the probe.\nSpecify either Symbol or StartRange and EndRange to match the caller function.",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "depth"
+                        ],
+                        "type": "object",
+                        "additionalProperties": false
+                      },
+                      "type": "array"
+                    },
+                    "matchWorkloads": {
+                      "description": "Workloads to match",
+                      "properties": {
+                        "containerSelector": {
+                          "description": "ContainerSelector selects containers that this policy applies to.\nA map of container fields will be constructed in the same way as a map of labels.\nThe name of the field represents the label \"key\", and the value of the field - label \"value\".\nCurrently, only the \"name\" field is supported.",
+                          "properties": {
+                            "matchExpressions": {
+                              "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.",
+                              "items": {
+                                "description": "A label selector requirement is a selector that contains values, a key, and an operator that\nrelates the key and values.",
+                                "properties": {
+                                  "key": {
+                                    "description": "key is the label key that the selector applies to.",
+                                    "type": "string"
+                                  },
+                                  "operator": {
+                                    "description": "operator represents a key's relationship to a set of values.\nValid operators are In, NotIn, Exists and DoesNotExist.",
+                                    "enum": [
+                                      "In",
+                                      "NotIn",
+                                      "Exists",
+                                      "DoesNotExist"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "values": {
+                                    "description": "values is an array of string values. If the operator is In or NotIn,\nthe values array must be non-empty. If the operator is Exists or DoesNotExist,\nthe values array must be empty. This array is replaced during a strategic\nmerge patch.",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array",
+                                    "x-kubernetes-list-type": "atomic"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "operator"
+                                ],
+                                "type": "object",
+                                "additionalProperties": false
+                              },
+                              "type": "array",
+                              "x-kubernetes-list-type": "atomic"
+                            },
+                            "matchLabels": {
+                              "additionalProperties": {
+                                "description": "MatchLabelsValue represents the value from the MatchLabels {key,value} pair.",
+                                "maxLength": 63,
+                                "pattern": "^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$",
+                                "type": "string"
+                              },
+                              "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels\nmap is equivalent to an element of matchExpressions, whose key field is \"key\", the\noperator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
+                              "type": "object"
+                            }
+                          },
+                          "type": "object",
+                          "x-kubernetes-map-type": "atomic",
+                          "additionalProperties": false
+                        },
+                        "hostSelector": {
+                          "description": "HostSelector selects hosts that this policy applies to.\nFor now only ~ (none) and {} (all) is supported.",
+                          "properties": {
+                            "matchExpressions": {
+                              "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.",
+                              "items": {
+                                "description": "A label selector requirement is a selector that contains values, a key, and an operator that\nrelates the key and values.",
+                                "properties": {
+                                  "key": {
+                                    "description": "key is the label key that the selector applies to.",
+                                    "type": "string"
+                                  },
+                                  "operator": {
+                                    "description": "operator represents a key's relationship to a set of values.\nValid operators are In, NotIn, Exists and DoesNotExist.",
+                                    "enum": [
+                                      "In",
+                                      "NotIn",
+                                      "Exists",
+                                      "DoesNotExist"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "values": {
+                                    "description": "values is an array of string values. If the operator is In or NotIn,\nthe values array must be non-empty. If the operator is Exists or DoesNotExist,\nthe values array must be empty. This array is replaced during a strategic\nmerge patch.",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array",
+                                    "x-kubernetes-list-type": "atomic"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "operator"
+                                ],
+                                "type": "object",
+                                "additionalProperties": false
+                              },
+                              "type": "array",
+                              "x-kubernetes-list-type": "atomic"
+                            },
+                            "matchLabels": {
+                              "additionalProperties": {
+                                "description": "MatchLabelsValue represents the value from the MatchLabels {key,value} pair.",
+                                "maxLength": 63,
+                                "pattern": "^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$",
+                                "type": "string"
+                              },
+                              "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels\nmap is equivalent to an element of matchExpressions, whose key field is \"key\", the\noperator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
+                              "type": "object"
+                            }
+                          },
+                          "type": "object",
+                          "x-kubernetes-map-type": "atomic",
+                          "x-kubernetes-validations": [
+                            {
+                              "message": "The hostSelector should be either null or {}.",
+                              "rule": "!has(self.matchLabels) && !has(self.matchExpressions)"
+                            }
+                          ],
+                          "additionalProperties": false
+                        },
+                        "podSelector": {
+                          "description": "PodSelector selects pods that this policy applies to",
+                          "properties": {
+                            "matchExpressions": {
+                              "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.",
+                              "items": {
+                                "description": "A label selector requirement is a selector that contains values, a key, and an operator that\nrelates the key and values.",
+                                "properties": {
+                                  "key": {
+                                    "description": "key is the label key that the selector applies to.",
+                                    "type": "string"
+                                  },
+                                  "operator": {
+                                    "description": "operator represents a key's relationship to a set of values.\nValid operators are In, NotIn, Exists and DoesNotExist.",
+                                    "enum": [
+                                      "In",
+                                      "NotIn",
+                                      "Exists",
+                                      "DoesNotExist"
+                                    ],
+                                    "type": "string"
+                                  },
+                                  "values": {
+                                    "description": "values is an array of string values. If the operator is In or NotIn,\nthe values array must be non-empty. If the operator is Exists or DoesNotExist,\nthe values array must be empty. This array is replaced during a strategic\nmerge patch.",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array",
+                                    "x-kubernetes-list-type": "atomic"
+                                  }
+                                },
+                                "required": [
+                                  "key",
+                                  "operator"
+                                ],
+                                "type": "object",
+                                "additionalProperties": false
+                              },
+                              "type": "array",
+                              "x-kubernetes-list-type": "atomic"
+                            },
+                            "matchLabels": {
+                              "additionalProperties": {
+                                "description": "MatchLabelsValue represents the value from the MatchLabels {key,value} pair.",
+                                "maxLength": 63,
+                                "pattern": "^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$",
+                                "type": "string"
+                              },
+                              "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels\nmap is equivalent to an element of matchExpressions, whose key field is \"key\", the\noperator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
+                              "type": "object"
+                            }
+                          },
+                          "type": "object",
+                          "x-kubernetes-map-type": "atomic",
+                          "additionalProperties": false
+                        }
+                      },
+                      "type": "object",
+                      "additionalProperties": false
+                    }
+                  },
+                  "type": "object",
+                  "additionalProperties": false
+                },
+                "maxItems": 5,
+                "type": "array"
+              },
+              "tags": {
+                "description": "Tags to categorize file integrity events.",
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 14,
+                "type": "array"
+              }
+            },
+            "type": "object",
+            "additionalProperties": false
+          },
+          "maxItems": 128,
+          "type": "array"
+        },
         "hostSelector": {
           "description": "HostSelector selects hosts that this policy applies to.\nFor now only ~ (none) and {} (all) is supported.",
           "properties": {

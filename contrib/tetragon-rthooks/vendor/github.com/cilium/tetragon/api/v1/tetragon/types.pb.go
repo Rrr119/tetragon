@@ -219,6 +219,32 @@ func (event *ProcessLsm) SetAncestors(ps []*Process) {
 
 // Encapsulate implements the Event interface.
 // Returns the event wrapped by its GetEventsResponse_* type.
+func (event *ProcessFileIntegrity) Encapsulate() IsGetEventsResponse_Event {
+	return &GetEventsResponse_ProcessFileIntegrity{
+		ProcessFileIntegrity: event,
+	}
+}
+
+// SetProcess implements the ProcessEvent interface.
+// Sets the Process field of an event.
+func (event *ProcessFileIntegrity) SetProcess(p *Process) {
+	event.Process = p
+}
+
+// SetParent implements the ParentEvent interface.
+// Sets the Parent field of an event.
+func (event *ProcessFileIntegrity) SetParent(p *Process) {
+	event.Parent = p
+}
+
+// SetAncestors implements the AncestorEvent interface.
+// Sets the Ancestor field of an event.
+func (event *ProcessFileIntegrity) SetAncestors(ps []*Process) {
+	event.Ancestors = ps
+}
+
+// Encapsulate implements the Event interface.
+// Returns the event wrapped by its GetEventsResponse_* type.
 func (event *Test) Encapsulate() IsGetEventsResponse_Event {
 	return &GetEventsResponse_Test{
 		Test: event,
@@ -288,6 +314,8 @@ func UnwrapGetEventsResponse(response *GetEventsResponse) interface{} {
 		return ev.ProcessUsdt
 	case *GetEventsResponse_ProcessLsm:
 		return ev.ProcessLsm
+	case *GetEventsResponse_ProcessFileIntegrity:
+		return ev.ProcessFileIntegrity
 	case *GetEventsResponse_Test:
 		return ev.Test
 	case *GetEventsResponse_ProcessLoader:

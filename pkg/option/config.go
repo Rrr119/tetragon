@@ -249,6 +249,8 @@ func AncestorsEnabled(eventType tetragon.EventType) bool {
 		return Config.EnableProcessAncestors
 	case tetragon.EventType_PROCESS_KPROBE:
 		return Config.EnableProcessKprobeAncestors
+	case tetragon.EventType_PROCESS_FILE_INTEGRITY:
+		return Config.EnableProcessKprobeAncestors
 	case tetragon.EventType_PROCESS_TRACEPOINT:
 		return Config.EnableProcessTracepointAncestors
 	case tetragon.EventType_PROCESS_LOADER:

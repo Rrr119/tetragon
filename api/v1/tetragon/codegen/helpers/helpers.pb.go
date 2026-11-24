@@ -41,6 +41,8 @@ func ResponseTypeString(response *tetragon.GetEventsResponse) (string, error) {
 		return tetragon.EventType_PROCESS_LSM.String(), nil
 	case *tetragon.GetEventsResponse_ProcessUsdt:
 		return tetragon.EventType_PROCESS_USDT.String(), nil
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return tetragon.EventType_PROCESS_FILE_INTEGRITY.String(), nil
 	case *tetragon.GetEventsResponse_Test:
 		return tetragon.EventType_TEST.String(), nil
 	case *tetragon.GetEventsResponse_RateLimitInfo:
@@ -81,6 +83,8 @@ func ResponseInnerGetProcess(event tetragon.IsGetEventsResponse_Event) *tetragon
 		return ev.ProcessUsdt.Process
 	case *tetragon.GetEventsResponse_ProcessLsm:
 		return ev.ProcessLsm.Process
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return ev.ProcessFileIntegrity.Process
 	case *tetragon.GetEventsResponse_ProcessLoader:
 		return ev.ProcessLoader.Process
 
@@ -128,6 +132,8 @@ func ResponseInnerGetParent(event tetragon.IsGetEventsResponse_Event) *tetragon.
 		return ev.ProcessUsdt.Parent
 	case *tetragon.GetEventsResponse_ProcessLsm:
 		return ev.ProcessLsm.Parent
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return ev.ProcessFileIntegrity.Parent
 	case *tetragon.GetEventsResponse_ProcessLoader:
 		return ev.ProcessLoader.Parent
 
@@ -166,6 +172,8 @@ func ResponseInnerGetAncestors(event tetragon.IsGetEventsResponse_Event) []*tetr
 		return ev.ProcessUsdt.Ancestors
 	case *tetragon.GetEventsResponse_ProcessLsm:
 		return ev.ProcessLsm.Ancestors
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return ev.ProcessFileIntegrity.Ancestors
 	case *tetragon.GetEventsResponse_ProcessLoader:
 		return ev.ProcessLoader.Ancestors
 
@@ -177,17 +185,18 @@ func ResponseInnerGetAncestors(event tetragon.IsGetEventsResponse_Event) []*tetr
 // protobuf messages (e.g. &tetragon.ProcessExec{}).
 func ResponseTypeMap() map[string]proto.Message {
 	return map[string]proto.Message{
-		"process_exec":       &tetragon.ProcessExec{},
-		"process_exit":       &tetragon.ProcessExit{},
-		"process_kprobe":     &tetragon.ProcessKprobe{},
-		"process_tracepoint": &tetragon.ProcessTracepoint{},
-		"process_loader":     &tetragon.ProcessLoader{},
-		"process_uprobe":     &tetragon.ProcessUprobe{},
-		"process_throttle":   &tetragon.ProcessThrottle{},
-		"process_lsm":        &tetragon.ProcessLsm{},
-		"process_usdt":       &tetragon.ProcessUsdt{},
-		"test":               &tetragon.Test{},
-		"rate_limit_info":    &tetragon.RateLimitInfo{},
+		"process_exec":           &tetragon.ProcessExec{},
+		"process_exit":           &tetragon.ProcessExit{},
+		"process_kprobe":         &tetragon.ProcessKprobe{},
+		"process_tracepoint":     &tetragon.ProcessTracepoint{},
+		"process_loader":         &tetragon.ProcessLoader{},
+		"process_uprobe":         &tetragon.ProcessUprobe{},
+		"process_throttle":       &tetragon.ProcessThrottle{},
+		"process_lsm":            &tetragon.ProcessLsm{},
+		"process_usdt":           &tetragon.ProcessUsdt{},
+		"process_file_integrity": &tetragon.ProcessFileIntegrity{},
+		"test":                   &tetragon.Test{},
+		"rate_limit_info":        &tetragon.RateLimitInfo{},
 	}
 }
 
@@ -213,6 +222,8 @@ func ProcessEventMapTuple(response *tetragon.GetEventsResponse) (string, any, an
 		return "process_lsm", response.GetProcessLsm(), (*tetragon.ProcessLsm)(nil)
 	case *tetragon.GetEventsResponse_ProcessUsdt:
 		return "process_usdt", response.GetProcessUsdt(), (*tetragon.ProcessUsdt)(nil)
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return "process_file_integrity", response.GetProcessFileIntegrity(), (*tetragon.ProcessFileIntegrity)(nil)
 	case *tetragon.GetEventsResponse_Test:
 		return "test", response.GetTest(), (*tetragon.Test)(nil)
 	case *tetragon.GetEventsResponse_RateLimitInfo:
@@ -225,16 +236,17 @@ func ProcessEventMapTuple(response *tetragon.GetEventsResponse) (string, any, an
 // ProcessEventMapEmpty returns a map from event field names (e.g. "process_exec") with nil as value
 func ProcessEventMapEmpty() map[string]any {
 	return map[string]any{
-		"process_exec":       (*tetragon.ProcessExec)(nil),
-		"process_exit":       (*tetragon.ProcessExit)(nil),
-		"process_kprobe":     (*tetragon.ProcessKprobe)(nil),
-		"process_tracepoint": (*tetragon.ProcessTracepoint)(nil),
-		"process_loader":     (*tetragon.ProcessLoader)(nil),
-		"process_uprobe":     (*tetragon.ProcessUprobe)(nil),
-		"process_throttle":   (*tetragon.ProcessThrottle)(nil),
-		"process_lsm":        (*tetragon.ProcessLsm)(nil),
-		"process_usdt":       (*tetragon.ProcessUsdt)(nil),
-		"test":               (*tetragon.Test)(nil),
-		"rate_limit_info":    (*tetragon.RateLimitInfo)(nil),
+		"process_exec":           (*tetragon.ProcessExec)(nil),
+		"process_exit":           (*tetragon.ProcessExit)(nil),
+		"process_kprobe":         (*tetragon.ProcessKprobe)(nil),
+		"process_tracepoint":     (*tetragon.ProcessTracepoint)(nil),
+		"process_loader":         (*tetragon.ProcessLoader)(nil),
+		"process_uprobe":         (*tetragon.ProcessUprobe)(nil),
+		"process_throttle":       (*tetragon.ProcessThrottle)(nil),
+		"process_lsm":            (*tetragon.ProcessLsm)(nil),
+		"process_usdt":           (*tetragon.ProcessUsdt)(nil),
+		"process_file_integrity": (*tetragon.ProcessFileIntegrity)(nil),
+		"test":                   (*tetragon.Test)(nil),
+		"rate_limit_info":        (*tetragon.RateLimitInfo)(nil),
 	}
 }

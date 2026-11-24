@@ -29,6 +29,52 @@ type KprobeIgnore struct {
 	CallNotFound bool `json:"callNotFound,omitempty"`
 }
 
+// FileIntegrityOperation is an operation that can modify a monitored file.
+type FileIntegrityOperation string
+
+const (
+	FileIntegrityOperationWrite    FileIntegrityOperation = "write"
+	FileIntegrityOperationTruncate FileIntegrityOperation = "truncate"
+	FileIntegrityOperationRename   FileIntegrityOperation = "rename"
+	FileIntegrityOperationDelete   FileIntegrityOperation = "delete"
+)
+
+// FileIntegritySpec configures file integrity monitoring for a set of paths.
+//
+// Paths support three matching modes:
+//   - an exact path, for example "/etc/passwd";
+//   - a directory subtree when the path ends with "/" or "/**", or when the
+//     path names an existing directory, for example "/etc/";
+//   - a shell-style glob, for example "/etc/*.conf".
+type FileIntegritySpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:MaxItems=128
+	// Paths to monitor.
+	Paths []string `json:"paths,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=128
+	// Paths to exclude from monitoring. Excludes take precedence over Paths.
+	ExcludePaths []string `json:"excludePaths,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=4
+	// +kubebuilder:validation:items:Enum=write;truncate;rename;delete
+	// Operations to monitor. Defaults to all supported operations.
+	Operations []string `json:"operations,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=5
+	// Selectors to filter events by process context. The path filter is
+	// appended to every selector and selectors are ORed.
+	Selectors []KProbeSelector `json:"selectors,omitempty"`
+	// +kubebuilder:validation:Optional
+	// A short message included in file integrity events.
+	Message string `json:"message,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=14
+	// Tags to categorize file integrity events.
+	Tags []string `json:"tags,omitempty"`
+}
+
 // +kubebuilder:validation:XValidation:rule="!has(self.return) || (!self.return || has(self.returnArg))",message="ReturnArg not specified with Return=true."
 type KProbeSpec struct {
 	// Name of the function to apply the kprobe spec to.

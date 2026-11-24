@@ -16,7 +16,9 @@ import (
 	"github.com/cilium/tetragon/pkg/api/tracingapi"
 	"github.com/cilium/tetragon/pkg/constants"
 	"github.com/cilium/tetragon/pkg/eventcache"
+	"github.com/cilium/tetragon/pkg/fileintegrity"
 	gt "github.com/cilium/tetragon/pkg/generictypes"
+	"github.com/cilium/tetragon/pkg/k8s/apis/cilium.io/v1alpha1"
 	"github.com/cilium/tetragon/pkg/ksyms"
 	"github.com/cilium/tetragon/pkg/ktime"
 	"github.com/cilium/tetragon/pkg/logger"
@@ -748,6 +750,12 @@ type MsgGenericKprobeUnix struct {
 	KernelStackTrace [constants.PERF_MAX_STACK_DEPTH]uint64
 	UserStackTrace   [constants.PERF_MAX_STACK_DEPTH]uint64
 	Tags             []string
+	FileIntegrity    *FileIntegrityInfo
+}
+
+// FileIntegrityInfo marks a generic kprobe event as a file integrity event.
+type FileIntegrityInfo struct {
+	Operation v1alpha1.FileIntegrityOperation
 }
 
 func (msg *MsgGenericKprobeUnix) GetArgs() *[]tracingapi.MsgGenericKprobeArg {
@@ -771,6 +779,16 @@ func (msg *MsgGenericKprobeUnix) Retry(internal *process.ProcessInternal, ev not
 }
 
 func (msg *MsgGenericKprobeUnix) HandleMessage() *tetragon.GetEventsResponse {
+	if msg.FileIntegrity != nil {
+		k := GetProcessFileIntegrity(msg)
+		if k == nil {
+			return nil
+		}
+		return &tetragon.GetEventsResponse{
+			Event: &tetragon.GetEventsResponse_ProcessFileIntegrity{ProcessFileIntegrity: k},
+			Time:  ktime.ToProto(msg.Msg.Common.Ktime),
+		}
+	}
 	k := GetProcessKprobe(msg)
 	if k == nil {
 		return nil
@@ -781,14 +799,138 @@ func (msg *MsgGenericKprobeUnix) HandleMessage() *tetragon.GetEventsResponse {
 	}
 }
 
+func GetProcessFileIntegrity(event *MsgGenericKprobeUnix) *tetragon.ProcessFileIntegrity {
+	if event == nil || event.FileIntegrity == nil {
+		return nil
+	}
+
+	proc, parent, tetragonProcess, tetragonParent := getProcessParent(&event.Msg.ProcessKey, event.Msg.Common.Flags)
+	var tetragonAncestors []*tetragon.Process
+	var ancestors []*process.ProcessInternal
+	if option.Config.EnableProcessKprobeAncestors && proc != nil && proc.NeededAncestors() {
+		ancestors, _ = process.GetAncestorProcessesInternal(tetragonProcess.ParentExecId)
+		for _, ancestor := range ancestors {
+			tetragonAncestors = append(tetragonAncestors, ancestor.UnsafeGetProcess())
+		}
+	}
+
+	var oldPath, newPath, path string
+	for _, arg := range event.Args {
+		argPath, label := kprobeArgPath(arg)
+		if argPath == "" {
+			continue
+		}
+		switch label {
+		case "old_path":
+			oldPath = argPath
+		case "new_path":
+			newPath = argPath
+		default:
+			if path == "" {
+				path = argPath
+			}
+		}
+	}
+	if event.FileIntegrity.Operation == v1alpha1.FileIntegrityOperationRename {
+		if oldPath == "" {
+			oldPath = path
+		}
+		path = newPath
+		if path == "" {
+			path = oldPath
+		}
+	}
+	if path == "" {
+		return nil
+	}
+
+	key := event.PolicyName
+	if id, ok := fileintegrity.IDFromTags(event.Tags); ok {
+		key = fileintegrity.RegistryKey(event.PolicyName, id)
+	}
+	if event.PolicyName != "" {
+		paths := []string{path}
+		if oldPath != "" && oldPath != path {
+			paths = append(paths, oldPath)
+		}
+		if !fileintegrity.Matches(key, event.FileIntegrity.Operation, paths...) {
+			return nil
+		}
+	}
+
+	digest := ""
+	if d, err := fileintegrity.Digest(path); err == nil {
+		digest = d
+	} else if oldPath != "" {
+		if d, err := fileintegrity.Digest(oldPath); err == nil {
+			digest = d
+		}
+	}
+
+	if tetragonProcess == nil {
+		tetragonProcess = &tetragon.Process{
+			Pid:       &wrapperspb.UInt32Value{Value: event.Msg.ProcessKey.Pid},
+			StartTime: ktime.ToProto(event.Msg.ProcessKey.Ktime),
+		}
+	}
+	tetragonEvent := &tetragon.ProcessFileIntegrity{
+		Process:      tetragonProcess,
+		Parent:       tetragonParent,
+		Ancestors:    tetragonAncestors,
+		Path:         path,
+		OldPath:      oldPath,
+		Operation:    string(event.FileIntegrity.Operation),
+		Digest:       digest,
+		PolicyName:   event.PolicyName,
+		Message:      event.Message,
+		Tags:         fileintegrity.PublicTags(event.Tags),
+		FunctionName: event.FuncName,
+		Action:       kprobeAction(event.Msg.ActionId),
+	}
+
+	if ec := eventcache.Get(); ec != nil && !isUnknown(tetragonProcess) &&
+		(ec.Needed(tetragonProcess) ||
+			(tetragonProcess.Pid != nil && tetragonProcess.Pid.Value > 1 && ec.Needed(tetragonParent)) ||
+			(option.Config.EnableProcessKprobeAncestors && ec.NeededAncestors(parent, ancestors))) {
+		ec.Add(nil, tetragonEvent, event.Msg.Common.Ktime, event.Msg.ProcessKey.Ktime, event)
+		return nil
+	}
+
+	if proc != nil {
+		tetragonEvent.Process = proc.GetProcessCopy()
+		process.UpdateEventProcessTid(tetragonEvent.Process, &event.Msg.Tid)
+	}
+	if parent != nil {
+		tetragonEvent.Parent = tetragonParent
+	}
+	return tetragonEvent
+}
+
+func kprobeArgPath(arg tracingapi.MsgGenericKprobeArg) (string, string) {
+	switch e := arg.(type) {
+	case tracingapi.MsgGenericKprobeArgPath:
+		return e.Value, e.Label
+	case tracingapi.MsgGenericKprobeArgFile:
+		return e.Value, e.Label
+	case tracingapi.MsgGenericKprobeArgLinuxBinprm:
+		return e.Value, e.Label
+	default:
+		return "", ""
+	}
+}
+
 func (msg *MsgGenericKprobeUnix) Cast(o any) notify.Message {
 	return new(o.(MsgGenericKprobeUnix))
 }
 
 func (msg *MsgGenericKprobeUnix) PolicyInfo() tracingpolicy.PolicyInfo {
+	hook := "kprobe:" + msg.FuncName
+	if msg.FileIntegrity != nil {
+		hook = "fileintegrity:" + msg.FuncName
+	}
 	return tracingpolicy.PolicyInfo{
 		Name: msg.PolicyName,
-		Hook: "kprobe:" + msg.FuncName,
+		Hook: hook,
 	}
 }
 

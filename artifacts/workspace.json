@@ -1,0 +1,17 @@
+{
+  "root": "/home/dev/feedback/uid36779",
+  "B": "/home/dev/feedback/uid36779",
+  "sha": "4c076be20023188b206ecfbaf7ed456d06c53f1d",
+  "wslDistro": "Ubuntu-26.04",
+  "source": {
+    "owner": "cilium",
+    "repo": "tetragon",
+    "sha": "4c076be20023188b206ecfbaf7ed456d06c53f1d"
+  },
+  "fork": {
+    "owner": "Rrr119",
+    "repo": "tetragon",
+    "cloneUrl": "https://github.com/Rrr119/tetragon.git"
+  },
+  "at": "2026-11-24T16:00:42.768Z"
+}

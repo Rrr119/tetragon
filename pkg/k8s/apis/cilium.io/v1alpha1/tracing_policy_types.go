@@ -108,6 +108,13 @@ type TracingPolicySpec struct {
 	// +kubebuilder:validation:MaxItems=128
 	// A list of fentry specs.
 	Fentries []KProbeSpec `json:"fentries,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:MaxItems=128
+	// A list of file integrity specs.
+	//
+	// File integrity specs are implemented on top of the existing kprobe
+	// sensor. They can be combined with kprobes in the same policy.
+	FileIntegrity []FileIntegritySpec `json:"fileIntegrity,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	// PodSelector selects pods that this policy applies to

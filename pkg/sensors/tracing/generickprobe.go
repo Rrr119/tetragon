@@ -36,6 +36,7 @@ import (
 	"github.com/cilium/tetragon/pkg/cgtracker"
 	"github.com/cilium/tetragon/pkg/config"
 	"github.com/cilium/tetragon/pkg/eventhandler"
+	"github.com/cilium/tetragon/pkg/fileintegrity"
 	"github.com/cilium/tetragon/pkg/grpc/tracing"
 	"github.com/cilium/tetragon/pkg/idtable"
 	"github.com/cilium/tetragon/pkg/k8s/apis/cilium.io/v1alpha1"
@@ -1403,6 +1404,9 @@ func handleMsgGenericKprobe(m *api.MsgGenericKprobe, gk *genericKprobe, r *bytes
 	unix.PolicyName = gk.policyName
 	unix.Message = gk.message
 	unix.Tags = gk.tags
+	if op, ok := fileintegrity.OperationFromTags(gk.tags); ok {
+		unix.FileIntegrity = &tracing.FileIntegrityInfo{Operation: op}
+	}
 
 	returnEvent := m.Common.Flags&processapi.MSG_COMMON_FLAG_RETURN != 0
 

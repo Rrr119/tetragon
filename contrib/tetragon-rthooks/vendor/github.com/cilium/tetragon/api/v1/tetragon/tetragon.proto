@@ -663,6 +663,36 @@ message ProcessLsm {
   string ima_hash = 11;
 }
 
+// ProcessFileIntegrity is generated when a file that matches a
+// TracingPolicy fileIntegrity section is modified.
+message ProcessFileIntegrity {
+  // Process that performed the modification.
+  Process process = 1;
+  // Immediate parent of the process.
+  Process parent = 2;
+  // Ancestors of the process beyond the immediate parent.
+  repeated Process ancestors = 3;
+  // Path of the file that was modified.
+  string path = 4;
+  // Previous path of the file. This is only set for rename operations.
+  string old_path = 5;
+  // Operation that modified the file: write, truncate, rename or delete.
+  string operation = 6;
+  // SHA-256 digest of the file when the event was processed. This is best
+  // effort and may be empty when the file cannot be read by the agent.
+  string digest = 7;
+  // Name of the policy that detected the modification.
+  string policy_name = 8;
+  // Short message of the Tracing Policy.
+  string message = 9;
+  // Tags of the Tracing Policy.
+  repeated string tags = 10;
+  // Kernel hook that detected the modification.
+  string function_name = 11;
+  // Action performed by the hook.
+  KprobeAction action = 12;
+}
+
 message KernelModule {
   // Kernel module name
   string name = 1;

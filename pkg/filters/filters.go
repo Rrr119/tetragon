@@ -200,6 +200,8 @@ func GetPolicyName(event *event.Event) string {
 	switch ev := (response.Event).(type) {
 	case *tetragon.GetEventsResponse_ProcessKprobe:
 		return ev.ProcessKprobe.GetPolicyName()
+	case *tetragon.GetEventsResponse_ProcessFileIntegrity:
+		return ev.ProcessFileIntegrity.GetPolicyName()
 	case *tetragon.GetEventsResponse_ProcessTracepoint:
 		return ev.ProcessTracepoint.GetPolicyName()
 	case *tetragon.GetEventsResponse_ProcessUprobe:
@@ -221,6 +223,7 @@ func CheckAncestorsEnabled(types []tetragon.EventType) error {
 			tetragon.EventType_PROCESS_EXEC,
 			tetragon.EventType_PROCESS_EXIT,
 			tetragon.EventType_PROCESS_KPROBE,
+			tetragon.EventType_PROCESS_FILE_INTEGRITY,
 			tetragon.EventType_PROCESS_TRACEPOINT,
 			tetragon.EventType_PROCESS_LOADER,
 			tetragon.EventType_PROCESS_UPROBE,
